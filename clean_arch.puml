@@ -1,0 +1,46 @@
+@startuml
+package Entity {
+    class UserModel{}
+    interface UserRepository{}
+}
+
+package UseCases {
+    package UseCase {
+        interface CreateUser{}
+    }
+    package UseCaseInputPort {
+        class CreateUserRequest{}
+    }
+    package UseCaseOutputPort {
+        class CreateUserResponse{}
+    }
+    package UseCaseInteractor {
+        class CreateUser{}
+    }
+}
+
+package Controller {
+    class PostUser{}
+}
+
+package Gateways {
+    class HandlePostUser{}
+}
+
+package DB {
+    class UserRepositoryImpl{}
+    class Database{}
+}
+
+UserModel <- UserRepository
+UseCases --> Entity
+UserRepository <|.. UserRepositoryImpl
+Database <- UserRepositoryImpl
+
+UseCaseInputPort <-- Controller
+Gateways --> UseCaseOutputPort
+
+UseCaseInteractor ..|> UseCase
+UseCaseInteractor ..> UseCaseInputPort
+UseCaseOutputPort <.. UseCaseInteractor
+@enduml

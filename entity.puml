@@ -1,0 +1,101 @@
+@startuml
+
+namespace InterfaceAdapters {
+    package handler {
+        class post_hello {
+        --
+            + handler(req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error)
+        }
+    }
+    package controller {
+        class Controller {
+            --
+            + PostUser(req events.APIGatewayProxyRequest) events.APIGatewayProxyResponse
+        }
+    }
+}
+
+namespace FrameworksAndDrivers {
+    package infra {
+        class DynamoClient {
+            + Client *dynamo.DB
+            + Config *aws.Config
+            --
+            + Connect() (*dynamo.DB, error)
+        }
+        class TableOperator {
+            + Table *dynamo.Table
+            + TableName string
+            --
+            + CreateUser(newUser *domain.UserModel) (*domain.UserModel, error)
+        }
+    }
+}
+
+namespace ApplicationBusinessRules {
+    package usecase {
+        interface ICreateUser {
+            --
+            + Execute(req *CreateUserRequest) (*CreateUserResponse, error)
+        }
+        class CreateUserRequest {
+            + Name string
+            + Email string
+        }
+        class CreateUserResponse {
+            + User *domain.UserModel
+        }
+    }
+    package interactor {
+        class CreateUser {
+            + UserRepository domain.UserRepository
+            --
+            + Execute(req *usecase.CreateUserRequest) (*usecase.CreateUserResponse, error)
+        }
+    }
+}
+namespace EnterpriseBusinessRules {
+    package domain {
+        interface UserRepository {
+            --
+            + CreateUser(newUser *UserModel) (*UserModel, error)
+        }
+        class UserModel {
+            + ID uint64
+            + Name string
+            + Email string
+        }
+    }
+}
+
+package registry {
+    class Factory {
+        --
+        + NewDynamoDBClient() (*dynamo.DB, error)
+        + BuildTableOperator(tableName string) *infra.TableOperator
+        + BuildCreateUser() usecase.ICreateUser
+    }
+}
+
+package DI {
+    class NewDynamoDBClient{}
+    class BuildTableOperator{}
+    class BuildCreateUser{}
+}
+
+controller <.. handler
+registry ..> controller : Inject usecase interface
+
+UserRepository ..> UserModel
+CreateUser ..|> ICreateUser
+TableOperator ..|> UserRepository
+
+ICreateUser ..> CreateUserRequest
+ICreateUser ..> CreateUserResponse
+
+'DI
+DI ..> registry
+BuildCreateUser <.. BuildTableOperator
+BuildTableOperator <.. NewDynamoDBClient
+
+@enduml

@@ -1,0 +1,31 @@
+version: "3.8"
+
+services:
+  go-lambda:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+      target: runner
+      args:
+        # compose.yamlの変数をDockerfileに渡す
+        - HANDLER=${HANDLER}
+    command: "./main"
+    volumes:
+      - ./volume/lambda:/opt/app
+    ports:
+      - "127.0.0.1:9000:8080"
+    networks:
+      - net
+  dynamodb-local:
+    command: "-jar DynamoDBLocal.jar -sharedDb -dbPath ./data"
+    image: "amazon/dynamodb-local:latest"
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./volume/dynamodb:/home/dynamodblocal/data
+    networks:
+      - net
+
+networks:
+  net:
+    driver: bridge
